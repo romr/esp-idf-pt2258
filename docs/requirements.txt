@@ -1,0 +1,6 @@
+sphinx~=8.0
+breathe~=4.35
+sphinx-rtd-theme~=3.0
+sphinx-copybutton
+sphinxcontrib-googleanalytics
+myst-parser~=5.1

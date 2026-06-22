@@ -1,0 +1,18 @@
+{# docs/_templates/breadcrumbs.html #}
+{% extends "!breadcrumbs.html" %}
+
+{% block breadcrumbs_aside %}
+<li class="wy-breadcrumbs-aside">
+  {% if github_url %}
+    <a href="{{ github_url }}" class="fa fa-github" target="_blank" rel="noopener noreferrer"> GitHub</a>
+  {% endif %}
+
+  {% if github_url and esp_registry_url %}
+    <span style="margin: 0 8px; color: #ccc;">|</span>
+  {% endif %}
+
+  {% if esp_registry_url %}
+    <a href="{{ esp_registry_url }}" class="fa fa-cubes" target="_blank" rel="noopener noreferrer"> ESP Registry</a>
+  {% endif %}
+</li>
+{% endblock %}

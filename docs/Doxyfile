@@ -1,0 +1,25 @@
+# Doxygen Configuration for ESP-IDF-PT2258
+#
+# For the complete list of configuration statements see:
+# https://www.doxygen.nl/manual/config.html
+
+PROJECT_NAME           = "ESP-IDF-PT2258"
+OUTPUT_DIRECTORY       = _build
+
+INPUT                  = 
+
+FILE_PATTERNS          = *.c \
+                         *.h \
+                         *.md \
+
+RECURSIVE              = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+ENABLE_PREPROCESSING   = YES
+
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+
+EXTRACT_ALL            = NO
+
+WARN_LOGFILE           = doxygen-warnings.log
