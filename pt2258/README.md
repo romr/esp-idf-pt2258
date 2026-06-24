@@ -145,7 +145,7 @@ void app_main(void)
     i2c_config_t bus_config = {
         // ... your i2c configuration ...
     };
-    i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
+    i2c_bus_handle_t i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
  
     // 2. Create the I2C transport context instance
     static pt2258_i2c_transport_t pt2258_i2c_transport = {
@@ -216,7 +216,7 @@ void app_main(void)
     const i2c_config_t bus_config = {
         // ... your i2c configuration ...
     };
-    i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
+    i2c_bus_handle_t i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
  
     // 2. Add the PT2258 device to the I2C bus (using 7-bit address)
     i2c_bus_device_handle_t pt2258_i2c_dev_handle = i2c_bus_device_create(i2c_bus, PT2258_I2C_ADDR_2, 0);
@@ -224,7 +224,7 @@ void app_main(void)
     // 3. Configure PT2258 driver by injecting transport dependencies
     pt2258_config_t pt2258_cfg = {
         .write_cb = pt2258_i2c_write_cb,            // Inject the specific I2C write callback
-        .i2c_dev_handle = &pt2258_i2c_dev_handle    // Inject the transport structure as the device handle context
+        .i2c_dev_handle = pt2258_i2c_dev_handle     // Inject the device handle directly
     };
     
     // Crucial: Wait at least 200ms after Power-ON to ensure PT2258 stability

@@ -6,7 +6,7 @@ repository_info:
   path: "pt2258"
 documentation: "https://romr.github.io/esp-idf-pt2258/pages/pt2258.html"
 license: "Apache-2.0"
-tags: 
+tags:
   - pt2258
   - i2c
   - driver
