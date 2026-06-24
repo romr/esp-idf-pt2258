@@ -1,0 +1,18 @@
+version: "0.3.1"
+description: "I2C driver for PT2258 6-channel electronic volume controller IC"
+url: https://github.com/romr/esp-idf-pt2258/tree/main/pt2258
+repository: "https://github.com/romr/esp-idf-pt2258.git"
+repository_info:
+  path: "pt2258"
+documentation: "https://romr.github.io/esp-idf-pt2258/pages/pt2258.html"
+license: "Apache-2.0"
+tags:
+  - pt2258
+  - i2c
+  - driver
+  - audio
+  - volume
+  - attenuator
+  - adf
+dependencies:
+  idf: '>=4.4.0'
