@@ -136,7 +136,7 @@ typedef struct {
 static esp_err_t pt2258_i2c_write_cb(void *handle, const uint8_t *data, size_t len)
 {
     pt2258_i2c_transport_t *transport = (pt2258_i2c_transport_t *)handle;
-    return i2c_bus_write_data(transport->bus_handle, transport->i2c_addr, (uint8_t*)data, len);
+    return i2c_bus_write_data(transport->bus_handle, transport->i2c_addr, (uint8_t *)data, len);
 }
 
 void app_main(void)
@@ -207,7 +207,7 @@ static const char *TAG = "main";
 static esp_err_t pt2258_i2c_write_cb(void *handle, const uint8_t *data, size_t len)
 {
     // Directly use the injected native ESP-IDF device handle
-    return i2c_bus_write_data(handle, PT2258_I2C_ADDR_2_8BIT, (uint8_t*)data, len);
+    return i2c_bus_write_data(handle, PT2258_I2C_ADDR_2_8BIT, (uint8_t *)data, len);
 }
 
 void app_main(void)
