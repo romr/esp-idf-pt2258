@@ -31,229 +31,128 @@ The PT2258 supports up to 4 selectable I2C addresses via the hardware configurat
 
 > [!IMPORTANT]
 > **Power-On Stabilization Delay** 
+>
 > After power-up, the PT2258 requires a stabilization period. You **must wait at least 200 ms** before transmitting any I2C signals. Initiating communication early can lock up the chip's internal logic, requiring a hard power cycle.
 
 > [!WARNING]
 > **Uninitialized Register Silence** 
+>
 > The PT2258 does not load default volume values on boot. While `pt2258_create()` automatically clears internal registers, you must explicitly set an attenuation value for each channel. Unconfigured channels will likely output no audio.
 
-## Usage Example
+## Usage
 
-This driver is I2C driver-independent and relies on Dependency Injection for communication. When initializing the driver, you must provide:
+This driver is I2C bus realization-independent and relies on Dependency Injection for communication. When initializing the driver, you must provide:
 
-- An I2C Write Callback: A custom function matching the pt2258_write_cb_t signature that dictates how bytes are transmitted.
-- A Bus Context / Device Handle: A pointer to your specific I2C device handle or transport configuration structure. The driver holds this pointer and passes it back to your callback function whenever an I2C operation is performed.
+- **A Bus Context / Device Handle**: A pointer to your specific I2C device handle or transport configuration structure (`transport_ctx`). The driver holds this pointer and passes it back to your callback function whenever an I2C operation is performed.
+- **An I2C Write Callback**: A custom function matching the `pt2258_write_cb_t` signature that dictates how bytes are transmitted.
+- **An Optional Cleanup Callback**: A custom function matching the `pt2258_cleanup_cb_t` signature to free memory if the transport context was allocated dynamically.
 
-### ESP-IDF Native Driver
+### I2C Write Callback Function
 
-The following example demonstrates how to initialize the PT2258 using the native ESP-IDF v5 master driver:
+The callback function must match the following signature:
 
 ```c
-#include "esp_log.h"
-#include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/i2c_master.h"
-#include "pt2258.h"
+typedef esp_err_t (*pt2258_write_cb_t)(void *transport, const uint8_t *data, size_t len);
+```
 
-static const char *TAG = "main";
+- `handle`: A pointer to your I2C device handle or transport configuration structure.
+- `data`: A pointer to the data to be written.
+- `len`: The length of the data to be written.
+- Returns: `ESP_OK` on success, or an error code on failure.
 
-// Implementation of the I2C write callback matching the pt2258_write_cb_t signature
-static esp_err_t pt2258_i2c_write_cb(void *handle, const uint8_t *data, size_t len)
+Example for native ESP-IDF v5 I2C Bus master driver:
+
+```c
+static esp_err_t _i2c_write_cb(void *transport, const uint8_t *data, size_t len)
 {
-    // Directly use the injected native ESP-IDF device handle
+    // Directly use the ESP-IDF native I2C master driver to write data into the PT2258
     return i2c_master_transmit((i2c_master_dev_handle_t)handle, data, len, -1);
 }
-
-void app_main(void)
-{
-    // 1. Initialize the I2C master bus
-    i2c_master_bus_config_t bus_config = {
-        // ... your configuration ...
-    };
-    i2c_master_bus_handle_t bus_handle;
-    i2c_master_new_bus(&bus_config, &bus_handle);
-
-    // 2. Add the PT2258 device to the I2C bus (using 7-bit address)
-    i2c_device_config_t dev_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = PT2258_I2C_ADDR_0, // 0x40 (7-bit)
-        .scl_speed_hz = 100000,              // 100 kHz Standard Mode
-    };
-    i2c_master_dev_handle_t pt2258_i2c_handle;
-    i2c_master_bus_add_device(bus_handle, &dev_config, &pt2258_i2c_handle);
-
-    // 3. Configure PT2258 driver settings by injecting the dependencies
-    pt2258_config_t pt2258_cfg = {
-        .write_cb = pt2258_i2c_write_cb,        // Inject the specific I2C write callback
-        .i2c_dev_handle = pt2258_i2c_handle     // Inject native device handle directly as context
-    };
-    
-    // Crucial: Wait at least 200ms after Power-ON to ensure PT2258 stability
-    vTaskDelay(pdMS_TO_TICKS(200));
-    
-    // 4. Create the PT2258 driver instance
-    pt2258_handle_t pt2258_handle;
-    esp_err_t err = pt2258_create(&pt2258_cfg, &pt2258_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create PT2258 driver: %s", esp_err_to_name(err));
-        return;
-    }
-    
-    // 5. Configure and control the PT2258
-    // Mute channels before changing configurations to avoid audio pops
-    pt2258_set_mute(pt2258_handle, true);
-
-    // 6. Adjust volume (attenuation)
-    // Set Master Volume (All channels) to -15 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_ALL, 15);
-
-    // Set Channel 1 specifically to -40 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_1, 40);
-
-    // Unmute the chip to let audio pass through
-    pt2258_set_mute(pt2258_handle, false);
-
-    // ... your application logic ...
-
-    // 7. Clean up resources when done
-    pt2258_delete(&pt2258_handle);
-}
 ```
 
-### ESP-ADF i2c_bus Driver
-
-The following example demonstrates how to initialize the PT2258 using the ESP-ADF i2c_bus:
+Example for Espressif-IoT-Solution i2c_bus driver:
 
 ```c
-// Define the I2C transport structure for the ESP-ADF i2c_bus, which holds the bus handle and device address
-typedef struct {
-    i2c_bus_handle_t bus_handle;
-    uint8_t i2c_addr;
-} pt2258_i2c_transport_t;
-
-// Implementation of the I2C write callback matching the pt2258_write_cb_t signature
-static esp_err_t pt2258_i2c_write_cb(void *handle, const uint8_t *data, size_t len)
+static esp_err_t _i2c_write_cb(void *transport, const uint8_t *data, size_t len)
 {
-    pt2258_i2c_transport_t *transport = (pt2258_i2c_transport_t *)handle;
-    return i2c_bus_write_data(transport->bus_handle, transport->i2c_addr, (uint8_t *)data, len);
-}
-
-void app_main(void)
-{
-    // 1. Initialize the I2C bus
-    i2c_config_t bus_config = {
-        // ... your i2c configuration ...
-    };
-    i2c_bus_handle_t i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
- 
-    // 2. Create the I2C transport context instance
-    static pt2258_i2c_transport_t pt2258_i2c_transport = {
-        .bus_handle = i2c_bus,
-        .i2c_addr = PT2258_I2C_ADDR_2_8BIT // 0x88 (8-bit)
-    };
-
-    // 3. Configure PT2258 driver by injecting transport dependencies
-    pt2258_config_t pt2258_cfg = {
-        .write_cb = pt2258_i2c_write_cb,        // Inject the specific I2C write callback
-        .i2c_dev_handle = &pt2258_i2c_transport // Inject the transport structure as the device handle context
-    };
-    
-    // Crucial: Wait at least 200ms after Power-ON to ensure PT2258 stability
-    vTaskDelay(pdMS_TO_TICKS(200)); 
-    
-    // 4. Create the PT2258 driver instance
-    pt2258_handle_t pt2258_handle;
-    esp_err_t err = pt2258_create(&pt2258_cfg, &pt2258_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create PT2258 driver: %s", esp_err_to_name(err));
-        return;
-    }
-    
-    // 5. Configure and control the PT2258
-    // Mute channels before changing configurations to avoid audio pops
-    pt2258_set_mute(pt2258_handle, true);
-
-    // Set All channels to -15 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_ALL, 15);
-
-    // Set Channel 1 specifically to -40 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_1, 40);
-
-    // Unmute the chip to let audio pass through
-    pt2258_set_mute(pt2258_handle, false);
-
-    // ... your application logic ...
-
-    // 7. Clean up resources when done
-    pt2258_delete(&pt2258_handle);
-}
-```
-### Espressif IoT Solution i2c_bus
-
-The following example demonstrates how to initialize the PT2258 using the Espressif IoT Solution i2c_bus:
-
-```c
-#include "esp_log.h"
-#include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "i2c_bus.h"
-#include "pt2258.h"
-
-static const char *TAG = "main";
-
-// Implementation of the I2C write callback matching the pt2258_write_cb_t signature
-static esp_err_t pt2258_i2c_write_cb(void *handle, const uint8_t *data, size_t len)
-{
-    // Directly use the injected native ESP-IDF device handle
+    // Use the Espressif-IoT Solution I2C driver to write data into the PT2258
     return i2c_bus_write_data(handle, PT2258_I2C_ADDR_2_8BIT, (uint8_t *)data, len);
 }
+```
 
-void app_main(void)
+### Usage in ESP-ADF
+
+If you're using the driver from ESP-ADF's embedded i2c_bus driver, in addition to providing the callback function, you must also provide a custom transport layer. The transport layer is a structure that contains the I2C bus handle and the I2C address. This structure is injected into the driver as the bus context during initialization.
+
+```c
+typedef struct {
+    i2c_bus_handle_t bus_handle;    // I2C bus handle
+    uint8_t i2c_addr;               // I2C address
+} pt2258_i2c_transport_t;
+
+static esp_err_t _i2c_write_cb(void *transport, const uint8_t *data, size_t len)
 {
-    // 1. Initialize the I2C bus
-    const i2c_config_t bus_config = {
-        // ... your i2c configuration ...
-    };
-    i2c_bus_handle_t i2c_bus = i2c_bus_create(I2C_NUM_0, &bus_config);
- 
-    // 2. Add the PT2258 device to the I2C bus (using 7-bit address)
-    i2c_bus_device_handle_t pt2258_i2c_dev_handle = i2c_bus_device_create(i2c_bus, PT2258_I2C_ADDR_2, 0);
+    pt2258_i2c_transport_t *transport = (pt2258_i2c_transport_t *)transport;
 
-    // 3. Configure PT2258 driver by injecting transport dependencies
-    pt2258_config_t pt2258_cfg = {
-        .write_cb = pt2258_i2c_write_cb,            // Inject the specific I2C write callback
-        .i2c_dev_handle = pt2258_i2c_dev_handle     // Inject the device handle directly
-    };
-    
-    // Crucial: Wait at least 200ms after Power-ON to ensure PT2258 stability
-    vTaskDelay(pdMS_TO_TICKS(200)); 
-    
-    // 4. Create the PT2258 driver instance
-    pt2258_handle_t pt2258_handle;
-    esp_err_t err = pt2258_create(&pt2258_cfg, &pt2258_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create PT2258 driver: %s", esp_err_to_name(err));
-        return;
-    }
-    
-    // 5. Configure and control the PT2258
-    // Mute channels before changing configurations to avoid audio pops
-    pt2258_set_mute(pt2258_handle, true);
-
-    // Set All channels to -15 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_ALL, 15);
-
-    // Set Channel 1 specifically to -40 dB
-    pt2258_set_attenuation(pt2258_handle, PT2258_CH_1, 40);
-
-    // Unmute the chip to let audio pass through
-    pt2258_set_mute(pt2258_handle, false);
-
-    // ... your application logic ...
-
-    // 7. Clean up resources when done
-    pt2258_delete(&pt2258_handle);
+    // Function i2c_bus_write_data is provided by the ESP-ADF i2c_bus driver to write data to the I2C device
+    return i2c_bus_write_data(transport->bus_handle, transport->i2c_addr, (uint8_t *)data, len);
 }
+```
+
+### Initialization
+
+After defining the callback function (and if needed, the transport structure), you need to initialize the PT2258 driver by injecting dependencies.
+
+```c
+// ... Your existing I2C bus initialization and device handle creation code ...
+
+// If using ESP-ADF i2c_bus driver, instead of device handle, define the transport structure
+#if USE_ESP_ADF_I2C_BUS
+static pt2258_i2c_transport_t pt2258_i2c_dev_handle = {
+    .bus_handle = &i2c_bus_handle,
+    .i2c_addr = PT2258_I2C_ADDR_2_8BIT
+};
+#endif
+
+// Configure PT2258 driver 
+pt2258_config_t pt2258_cfg = {
+    .transport_ctx = pt2258_i2c_dev_handle,  // Inject the I2C device handle context or transport structure
+    .write_cb = _i2c_write_cb,                // Inject the specific I2C write callback
+};
+
+// Crucial: Wait at least 200ms after Power-ON to ensure PT2258 stability
+vTaskDelay(pdMS_TO_TICKS(200)); 
+    
+// 3. Create the PT2258 driver instance
+pt2258_handle_t pt2258_handle;
+esp_err_t err = pt2258_create(&pt2258_cfg, &pt2258_handle);
+if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to create PT2258 driver: %s", esp_err_to_name(err));
+    return;
+}
+```
+
+### Control
+
+After the driver is created, you can control the PT2258 by calling API functions, for example:
+
+```c
+// Mute all channels
+pt2258_set_mute(pt2258_handle, true);
+
+// Set the attenuation for channel 1 to 10dB
+pt2258_set_attenuation(pt2258_handle, PT2258_CH_1, 10);
+
+// Set the attenuation for all channels to 22dB
+pt2258_set_attenuation(pt2258_handle, PT2258_CH_ALL, 22);
+```
+
+See [API documentation](https://romr.github.io/esp-idf-pt2258/pages/pt2258.html#api-reference) for more details.
+
+### Delete
+
+To delete the PT2258 driver instance:
+
+```c
+pt2258_delete(&pt2258_handle);
 ```
