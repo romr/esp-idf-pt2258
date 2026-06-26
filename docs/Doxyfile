@@ -8,6 +8,7 @@ OUTPUT_DIRECTORY       = _build
 
 INPUT                  = \
     ../pt2258/include \
+    ../pt2258_esp_adf/include \
 
 FILE_PATTERNS          = *.c \
                          *.h \
