@@ -18,7 +18,7 @@ extern "C" {
  */
 typedef struct {
     i2c_bus_handle_t bus_handle;    /*!< I2C bus handle */
-    uint8_t i2c_addr;               /*!< I2C address */
+    uint8_t i2c_addr;               /*!< I2C address (8-bit) */
 } pt2258_esp_adf_config_t;
 
 /**

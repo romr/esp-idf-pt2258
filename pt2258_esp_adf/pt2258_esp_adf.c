@@ -16,14 +16,25 @@ static const char *TAG = "PT2258_ADF_ADAPTER";
 typedef struct {
     i2c_bus_handle_t bus_handle;
     uint8_t i2c_addr;
-} adf_transport_ctx_t;
+} i2c_transport_ctx_t;
 
+/**
+ * @brief Write callback for PT2258 driver
+ * @param[in] dev_handle Pointer to the transport context
+ * @param[in] data       Pointer to the data to write
+ * @param[in] len        Length of the data to write
+ * @return esp_err_t ESP_OK on success, otherwise an error code
+ */
 static esp_err_t _write_cb(void *dev_handle, const uint8_t *data, size_t len)
 {
-    adf_transport_ctx_t *ctx = (adf_transport_ctx_t *)dev_handle;
+    i2c_transport_ctx_t *ctx = (i2c_transport_ctx_t *)dev_handle;
     return i2c_bus_write_data(ctx->bus_handle, ctx->i2c_addr, (uint8_t *)data, len);
 }
 
+/**
+ * @brief Cleanup callback for PT2258 driver
+ * @param[in] dev_handle Pointer to the transport context
+ */
 static void _cleanup_cb(void *dev_handle)
 {
     free(dev_handle);
@@ -34,7 +45,7 @@ esp_err_t pt2258_esp_adf_create(const pt2258_esp_adf_config_t *cfg, pt2258_handl
     ESP_RETURN_ON_FALSE(cfg && handle, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
     ESP_RETURN_ON_FALSE(cfg->bus_handle, ESP_ERR_INVALID_ARG, TAG, "I2C bus handle is NULL");
 
-    adf_transport_ctx_t *ctx = calloc(1, sizeof(adf_transport_ctx_t));
+    i2c_transport_ctx_t *ctx = calloc(1, sizeof(i2c_transport_ctx_t));
     ESP_RETURN_ON_FALSE(ctx, ESP_ERR_NO_MEM, TAG, "Failed to allocate transport context");
 
     ctx->bus_handle = cfg->bus_handle;
