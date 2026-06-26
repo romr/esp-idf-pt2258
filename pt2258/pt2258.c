@@ -15,9 +15,10 @@ static const char *TAG = "PT2258";
  * @brief Internal PT2258 driver instance structure
  */
 typedef struct {
+    void *transport_ctx;
     pt2258_write_cb_t write_cb;
-    void *i2c_dev_handle;
-} pt2258_i2c_t;
+    pt2258_cleanup_cb_t cleanup_cb;
+} pt2258_ctx_t;
 
 /**
  * @brief Command address codes for PT2258 volume attenuation
@@ -54,18 +55,18 @@ static const pt2258_ch_cmd_t channel_cmds[PT2258_TOTAL_CHANNELS + 1] = {
 static esp_err_t _write_reg(pt2258_handle_t handle, const uint8_t *data, size_t len)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid handle pointer");
-    pt2258_i2c_t *dev = (pt2258_i2c_t *)handle;
+    pt2258_ctx_t *dev = (pt2258_ctx_t *)handle;
     
-    if (!dev || !dev->write_cb) {
+    if (!dev->write_cb) {
         ESP_LOGE(TAG, "Driver uninitialized or missing write callback");
         return ESP_ERR_INVALID_STATE;
     }
 
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, data, len, ESP_LOG_DEBUG);
 
-    esp_err_t ret = dev->write_cb(dev->i2c_dev_handle, data, len);
+    esp_err_t ret = dev->write_cb(dev->transport_ctx, data, len);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "I2C transport write failed (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Transport write failed (%s)", esp_err_to_name(ret));
     }
     return ret;
 }
@@ -73,23 +74,22 @@ static esp_err_t _write_reg(pt2258_handle_t handle, const uint8_t *data, size_t 
 esp_err_t pt2258_create(const pt2258_config_t *cfg, pt2258_handle_t *handle)
 {
     ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, TAG, "invalid device config pointer");
-    ESP_RETURN_ON_FALSE(cfg->write_cb, ESP_ERR_INVALID_ARG, TAG, "missing I2C write callback");
+    ESP_RETURN_ON_FALSE(cfg->transport_ctx, ESP_ERR_INVALID_ARG, TAG, "invalid transport context");
+    ESP_RETURN_ON_FALSE(cfg->write_cb, ESP_ERR_INVALID_ARG, TAG, "missing write callback");
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid device handle pointer");
 
     ESP_LOGI(TAG, "Initializing %s instance via injected transport", PT2258_CHIP_NAME);
 
-    // Allocate memory for internal driver structure
-    pt2258_i2c_t *dev = calloc(1, sizeof(pt2258_i2c_t));
+    pt2258_ctx_t *dev = calloc(1, sizeof(pt2258_ctx_t));
     ESP_RETURN_ON_FALSE(dev, ESP_ERR_NO_MEM, TAG, "failed to allocate memory for driver state");
-    
-    // Inject dependencies
-    dev->write_cb = cfg->write_cb;
-    dev->i2c_dev_handle = cfg->i2c_dev_handle;
 
     // Reset chip registers for initial hardware initialization
     esp_err_t ret = pt2258_clear_registers((pt2258_handle_t)dev);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Hardware reset failed during creation, cleaning up...");
+        if (dev->cleanup_cb) {
+            dev->cleanup_cb(dev->transport_ctx);
+        }
         free(dev);
         return ret;
     }
@@ -103,8 +103,13 @@ esp_err_t pt2258_delete(pt2258_handle_t *handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid handle pointer");
     ESP_RETURN_ON_FALSE(*handle, ESP_ERR_INVALID_ARG, TAG, "invalid device handle");
- 
-    free(*handle);
+
+    pt2258_ctx_t *dev = (pt2258_ctx_t *)*handle;
+    if (dev->cleanup_cb) {
+        dev->cleanup_cb(dev->transport_ctx);
+    }
+
+    free(dev);
     *handle = NULL;
     
     ESP_LOGI(TAG, "%s driver instance deleted", PT2258_CHIP_NAME);
