@@ -1,4 +1,4 @@
-version: "0.1.0"
+version: "0.1.1"
 description: "ESP-ADF integration wrapper for the PT2258. Attaches the low-level driver to the ADF i2c_bus transport layer."
 url: https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_esp_adf
 repository: "https://github.com/romr/esp-idf-pt2258.git"
