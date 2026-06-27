@@ -41,6 +41,16 @@ The PT2258 supports up to 4 selectable I2C addresses via the hardware configurat
 
 ## Usage
 
+> [!TIP]
+> **Out-of-the-box Ecosystem Adapters**
+>
+> To avoid writing boilerplate callback functions manually, you can use one of the plug-and-play initialization adapters tailored for your specific workflow:
+>
+> - 🔌 **ESP-IDF v5 Native I2C Master Adapter** — [GitHub](https://github.com/romr/pt2258_esp_idf) · [ESP Registry](https://components.espressif.com/components/romr/pt2258_esp_idf)
+> - 🔌 **ESP-ADF i2c_bus Adapter** — [GitHub](https://github.com/romr/pt2258_esp_adf) · [ESP Registry](https://components.espressif.com/components/romr/pt2258_esp_adf)
+>
+> If you are using these adapters, you can skip the manual dependency injection setup below.
+
 This driver is I2C bus realization-independent and relies on Dependency Injection for communication. When initializing the driver, you must provide:
 
 - **A Bus Context / Device Handle**: A pointer to your specific I2C device handle or transport configuration structure (`transport_ctx`). The driver holds this pointer and passes it back to your callback function whenever an I2C operation is performed.
