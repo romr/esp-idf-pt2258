@@ -32,7 +32,7 @@ pt2258_esp_adf_config_t pt2258_config = {
     .i2c_addr = PT2258_I2C_ADDR_0_8BIT, // refer to pt2258 I2C driver docs for address options
 };
 pt2258_handle_t pt2258;
-esp_err_t ret = pt2258_esp_idf_create(&pt2258_config, &pt2258);
+esp_err_t ret = pt2258_esp_adf_create(&pt2258_config, &pt2258);
 ESP_ERROR_CHECK(ret);
 
 // 3. Then you can use the pt2258 driver functions for volume control
