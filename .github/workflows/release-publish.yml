@@ -3,65 +3,10 @@ name: Release and publish on ESP Registry
 on:
   push:
     tags:
-      - 'pt2258-v*'
+      - 'test-v*'
       - 'pt2258_ctrl-v*'
 
 jobs:
-  github-release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Parse Component Name from Tag
-        id: target
-        run: |
-          TAG_NAME=${{ github.ref_name }}
-
-          COMP_NAME=$(echo "$TAG_NAME" | cut -d'-' -f1)
-          COMP_VERSION=$(echo "$TAG_NAME" | cut -d'-' -f2)
-          
-          echo "name=${COMP_NAME}" >> $GITHUB_OUTPUT
-          echo "version=${COMP_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Generate Scoped Changelog
-        id: changelog
-        run: |
-          COMP_NAME=${{ steps.target.outputs.name }}
-          CURRENT_TAG=${{ github.ref_name }}
-
-          # Get previous tag for this component
-          PREV_TAG=$(git tag -l "${COMP_NAME}-v*" | sort -V | tail -n 2 | head -n 1)
-
-          echo "### Component: ${COMP_NAME}" > release_notes.md
-          echo "" >> release_notes.md
-          echo "#### What's Changed in this version:" >> release_notes.md
-
-          # If previous tag matches current tag (meaning this is the first release of the component)
-          if [ "$PREV_TAG" = "$CURRENT_TAG" ] || [ -z "$PREV_TAG" ]; then
-            echo "* Initial release of the component!" >> release_notes.md
-          else
-            git log ${PREV_TAG}..${CURRENT_TAG} --oneline --format="* %s (%h)" -- ./${COMP_NAME} >> release_notes.md
-          fi
-
-          # If no commits found in the folder (e.g., tag was manually created without code changes)
-          if [ $(wc -l < release_notes.md) -le 3 ]; then
-            echo "* Minor updates and documentation fixes." >> release_notes.md
-          fi
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "[${{ steps.target.outputs.name }}] ${{ steps.target.outputs.version }}"
-          body_path: release_notes.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   esp-registry:
     runs-on: ubuntu-latest
     permissions:
@@ -84,3 +29,5 @@ jobs:
         with:
           namespace: "romr"
           components: "${{ steps.target.outputs.name }}:${{ steps.target.outputs.path }}"
+          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
+          dry_run: true
