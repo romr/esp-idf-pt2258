@@ -78,10 +78,14 @@ esp_err_t pt2258_create(const pt2258_config_t *cfg, pt2258_handle_t *handle)
     ESP_RETURN_ON_FALSE(cfg->write_cb, ESP_ERR_INVALID_ARG, TAG, "missing write callback");
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid device handle pointer");
 
-    ESP_LOGI(TAG, "Initializing %s instance via injected transport", PT2258_CHIP_NAME);
+    ESP_LOGD(TAG, "Initializing %s instance via injected transport", PT2258_CHIP_NAME);
 
     pt2258_ctx_t *dev = calloc(1, sizeof(pt2258_ctx_t));
     ESP_RETURN_ON_FALSE(dev, ESP_ERR_NO_MEM, TAG, "failed to allocate memory for driver state");
+
+    dev->transport_ctx = cfg->transport_ctx;
+    dev->write_cb = cfg->write_cb;
+    dev->cleanup_cb = cfg->cleanup_cb;
 
     // Reset chip registers for initial hardware initialization
     esp_err_t ret = pt2258_clear_registers((pt2258_handle_t)dev);
