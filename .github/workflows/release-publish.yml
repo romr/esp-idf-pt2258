@@ -5,6 +5,8 @@ on:
     tags:
       - 'pt2258-v*'
       - 'pt2258_ctrl-v*'
+      - 'pt2258_esp_adf-v*'
+      - 'pt2258_esp_idf-v*'
 
 jobs:
   github-release:
@@ -84,3 +86,5 @@ jobs:
         with:
           namespace: "romr"
           components: "${{ steps.target.outputs.name }}:${{ steps.target.outputs.path }}"
+          api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
+          dry_run: true
