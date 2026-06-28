@@ -76,7 +76,7 @@ Example for native ESP-IDF v5 I2C Bus master driver:
 static esp_err_t _i2c_write_cb(void *transport, const uint8_t *data, size_t len)
 {
     // Directly use the ESP-IDF native I2C master driver to write data into the PT2258
-    return i2c_master_transmit((i2c_master_dev_handle_t)handle, data, len, -1);
+    return i2c_master_transmit((i2c_master_dev_handle_t)transport, data, len, -1);
 }
 ```
 
@@ -86,7 +86,7 @@ Example for Espressif-IoT-Solution i2c_bus driver:
 static esp_err_t _i2c_write_cb(void *transport, const uint8_t *data, size_t len)
 {
     // Use the Espressif-IoT Solution I2C driver to write data into the PT2258
-    return i2c_bus_write_data(handle, PT2258_I2C_ADDR_2_8BIT, (uint8_t *)data, len);
+    return i2c_bus_write_data(transport, PT2258_I2C_ADDR_2_8BIT, (uint8_t *)data, len);
 }
 ```
 
@@ -126,7 +126,7 @@ static pt2258_i2c_transport_t pt2258_i2c_dev_handle = {
 
 // Configure PT2258 driver 
 pt2258_config_t pt2258_cfg = {
-    .transport_ctx = pt2258_i2c_dev_handle,  // Inject the I2C device handle context or transport structure
+    .transport_ctx = &pt2258_i2c_dev_handle,  // Inject the I2C device handle context or transport structure
     .write_cb = _i2c_write_cb,                // Inject the specific I2C write callback
 };
 

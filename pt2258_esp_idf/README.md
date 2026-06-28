@@ -6,7 +6,7 @@ This component provides an ESP-IDF initialization adapter for the PT2258 6-chann
 
 ## Add to your project
 
-```
+```bash
 idf.py add-dependency romr/pt2258_esp_idf
 ```
 

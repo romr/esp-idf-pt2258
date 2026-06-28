@@ -31,12 +31,12 @@ idf.py add-dependency "romr/pt2258_esp_adf"
 idf.py add-dependency "romr/pt2258"
 ```
 
->[!NOTE]
->**Automatic Dependency Resolution**
+> [!NOTE]
+> **Automatic Dependency Resolution**
 >
->When using any of the official adapters (pt2258_esp_idf or pt2258_esp_adf), the core romr/pt2258 driver is automatically resolved and installed as a required dependency by the ESP Component Manager. You do not need to add it manually.
+> When using any of the official adapters (pt2258_esp_idf or pt2258_esp_adf), the core romr/pt2258 driver is automatically resolved and installed as a required dependency by the ESP Component Manager. You do not need to add it manually.
 >
->Direct installation of the core romr/pt2258 component is strictly reserved for projects requiring a custom, user-defined I2C transport implementation.
+> Direct installation of the core romr/pt2258 component is strictly reserved for projects requiring a custom, user-defined I2C transport implementation.
 
 ### Option 2: Git Submodule
 Add this entire repository into your project's components/ directory.
