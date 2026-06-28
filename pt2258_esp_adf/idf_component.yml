@@ -15,5 +15,4 @@ tags:
   - attenuator
   - adf
 dependencies:
-  esp-adf: '>=2.8'
   romr/pt2258: '~0.4.0'
