@@ -1,0 +1,18 @@
+version: "0.1.3"
+description: "ESP-ADF integration wrapper for the PT2258. Attaches the low-level driver to the ADF i2c_bus transport layer."
+url: https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_esp_adf
+repository: "https://github.com/romr/esp-idf-pt2258.git"
+repository_info:
+  path: "pt2258_esp_adf"
+documentation: "https://romr.github.io/esp-idf-pt2258/pages/pt2258_esp_adf.html"
+license: "Apache-2.0"
+tags:
+  - pt2258
+  - i2c
+  - driver
+  - audio
+  - volume
+  - attenuator
+  - adf
+dependencies:
+  romr/pt2258: '~0.4.0'
