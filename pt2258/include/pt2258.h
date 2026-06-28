@@ -41,12 +41,12 @@ extern "C" {
  */
 typedef enum {
     PT2258_CH_ALL = 0,   /*!< Master Volume (All channels) */
-    PT2258_CH_1   = 1,   /*!< Channel 1 */
-    PT2258_CH_2,         /*!< Channel 2 */
-    PT2258_CH_3,         /*!< Channel 3 */
-    PT2258_CH_4,         /*!< Channel 4 */
-    PT2258_CH_5,         /*!< Channel 5 */
-    PT2258_CH_6,         /*!< Channel 6 */
+    PT2258_CH_1   = 1,   /*!< Channel 1 (pins 1->20) */
+    PT2258_CH_2,         /*!< Channel 2 (pins 2->19) */
+    PT2258_CH_3,         /*!< Channel 3 (pins 3->18) */
+    PT2258_CH_4,         /*!< Channel 4 (pins 8->13) */
+    PT2258_CH_5,         /*!< Channel 5 (pins 9->12) */
+    PT2258_CH_6,         /*!< Channel 6 (pins 10->11) */
 } pt2258_ch_t;
 
 /**
@@ -58,19 +58,27 @@ typedef void *pt2258_handle_t;
 /**
  * @brief Type of PT2258 write function callback
  * 
- * @param[in] handle Context pointer (e.g. device descriptor, transport context)
+ * @param[in] transport Context pointer (e.g. device descriptor, transport context)
  * @param[in] data Pointer to data buffer to write
- * @param[in] len Number of bytes to write
+ * @param[in] len  Number of bytes to write
  * @return esp_err_t ESP_OK on success, error code otherwise
  */
-typedef esp_err_t (*pt2258_write_cb_t)(void *handle, const uint8_t *data, size_t len);
+typedef esp_err_t (*pt2258_write_cb_t)(void *transport, const uint8_t *data, size_t len);
+
+/**
+ * @brief Type of PT2258 cleanup function callback
+ * 
+ * @param[in] transport Context pointer (e.g. device descriptor, transport context)
+ */
+typedef void (*pt2258_cleanup_cb_t)(void *transport);
 
 /**
  * @brief PT2258 Configuration Structure
  */
 typedef struct {
-    pt2258_write_cb_t write_cb;  /*!< I2C write callback function */
-    void *i2c_dev_handle;        /*!< Context pointer passed to the callback (e.g. i2c_master_dev_handle_t, i2c_bus_device_handle_t) */
+    void *transport_ctx;                /*!< Opaque context pointer passed to callbacks (e.g., custom transport struct, or native I2C device handle) */
+    pt2258_write_cb_t write_cb;         /*!< Write callback function */
+    pt2258_cleanup_cb_t cleanup_cb;     /*!< Optional callback to free transport_ctx dynamic memory during driver destruction */
 } pt2258_config_t;
 
 /**

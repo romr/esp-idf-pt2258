@@ -1,0 +1,19 @@
+version: "0.1.2"
+description: "ESP-IDF integration wrapper for the PT2258. Attaches the low-level driver to the ESP-IDF i2c_master transport layer."
+url: https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_esp_idf
+repository: "https://github.com/romr/esp-idf-pt2258.git"
+repository_info:
+  path: "pt2258_esp_idf"
+documentation: "https://romr.github.io/esp-idf-pt2258/pages/pt2258_esp_idf.html"
+license: "Apache-2.0"
+tags:
+  - pt2258
+  - i2c
+  - driver
+  - audio
+  - volume
+  - attenuator
+  - idf
+dependencies:
+  esp-idf: '>=5.2'
+  romr/pt2258: '~0.4.0'
