@@ -60,7 +60,6 @@ esp_err_t pt2258_esp_adf_create(const pt2258_esp_adf_config_t *cfg, pt2258_handl
     esp_err_t ret = pt2258_create(&pt2258_cfg, handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create PT2258 driver");
-        free(ctx);
         return ret;
     }
     
