@@ -87,4 +87,3 @@ jobs:
           namespace: "romr"
           components: "${{ steps.target.outputs.name }}:${{ steps.target.outputs.path }}"
           api_token: ${{ secrets.IDF_COMPONENT_API_TOKEN }}
-          dry_run: true
