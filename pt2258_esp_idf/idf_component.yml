@@ -1,4 +1,4 @@
-version: "0.1.0"
+version: "0.1.2"
 description: "ESP-IDF integration wrapper for the PT2258. Attaches the low-level driver to the ESP-IDF i2c_master transport layer."
 url: https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_esp_idf
 repository: "https://github.com/romr/esp-idf-pt2258.git"
