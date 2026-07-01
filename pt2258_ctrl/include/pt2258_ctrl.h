@@ -34,7 +34,7 @@ typedef struct {
     pt2258_handle_t pt2258;         /*!< PT2258 handle */
     uint8_t active_channels_mask;   /*!< Mask of active channels (e.g., PT2258_CH1_ENABLE | PT2258_CH2_ENABLE) */
     uint8_t init_volume;            /*!< Initial master volume at power-on (0-100%) */
-    uint8_t offset_limits;          /*!< Offset limits */
+    uint8_t offset_limits;          /*!< Offset limits in dB (must be <= PT2258_MAX_ATTENUATION) */
     bool init_mute;                 /*!< Initial mute state */
     bool use_linear_volume;         /*!< Use linear volume scaling (false = logarithmic LUT, true = linear) */
 } pt2258_ctrl_config_t;
@@ -100,7 +100,7 @@ esp_err_t pt2258_ctrl_volume_step_up(pt2258_ctrl_handle_t handle, uint8_t step_p
 /**
  * @brief Decrease master volume by a relative percentage step
  * @param[in] handle Controller instance handle
- * @param[in] step_percent Step up value percentage (1-100%)
+ * @param[in] step_percent Step down value percentage (1-100%)
  * @return ESP_OK on success, error code otherwise
  */
 esp_err_t pt2258_ctrl_volume_step_down(pt2258_ctrl_handle_t handle, uint8_t step_percent);

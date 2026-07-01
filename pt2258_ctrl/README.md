@@ -16,7 +16,7 @@ An ESP-IDF volume management engine for the PT2258 IC, featuring logarithmic sca
 
 ## Dependencies & Integration
 
-This component acts as a high-level software engine and **strictly requires** the low-level hardware driver `romr/pt2258` compontnent to communicate with the chip.
+This component acts as a high-level software engine and **strictly requires** the low-level hardware driver `romr/pt2258` component to communicate with the chip.
 
 > [!NOTE]
 > **Automatic Resolution**
@@ -38,6 +38,11 @@ dependencies:
 ## Usage example
 Because the core driver is pulled automatically, you can directly include both interfaces (pt2258.h and pt2258_ctrl.h) in your application code:
 
+> [!NOTE]
+> **Thread Safety**
+>
+> This component is not thread-safe. Use from a single task or add external synchronization if accessing from multiple contexts.
+
 ```c
 #include "esp_log.h"
 #include "i2c_bus.h"
@@ -58,13 +63,13 @@ void app_main(void)
         .pt2258 = pt2258_handle,
         .active_channels_mask = PT2258_CH1_ENABLE | PT2258_CH2_ENABLE | PT2258_CH3_ENABLE,
         .init_volume = 50,              // Start at 50% volume
-        .offset_limits = 20,            // Allow +/- 20 dB offset per channel
+        .offset_limits = 20,            // Allow +/- 20 dB offset per channel (must be <= PT2258_MAX_ATTENUATION)
         .use_linear_volume = false,     // Use logarithmic volume scaling (false = LUT, true = linear)
         .init_mute = true,              // Start with audio disabled
     };
 
     pt2258_ctrl_handle_t ctrl_handle = NULL;
-    ret = pt2258_ctrl_create(&ctrl_cfg, &ctrl_handle);
+    esp_err_t ret = pt2258_ctrl_create(&ctrl_cfg, &ctrl_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize PT2258 controller");
         pt2258_delete(&pt2258_handle);

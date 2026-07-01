@@ -8,7 +8,9 @@
 
 #include "pt2258_ctrl.h"
 
-#define MAX_OFFSET_LIMIT 78
+/**
+ * @brief Maximum volume limit (0-100)
+ */
 #define MAX_VOLUME_LIMIT 100
 
 static const char *TAG = "PT2258_CTRL";
@@ -26,12 +28,12 @@ struct pt2258_ctrl_ctx_t {
 
 /**
  * @brief Logarithmic volume lookup table (LUT) for perceptual audio control
- * Maps 0-100% volume to 79-0 dB attenuation
- * @note Array size is exactly 101 to map indices 0 to 100 inclusive.
+ * Maps 0-MAX_VOLUME_LIMIT% volume to 79-0 dB attenuation
+ * @note Array size is exactly MAX_VOLUME_LIMIT + 1 to map indices 0 to MAX_VOLUME_LIMIT inclusive.
  * - Index 0   (0%)   -> 79 dB attenuation (Maximum attenuation / Silence)
- * - Index 100 (100%) ->  0 dB attenuation (Minimum attenuation / Max volume)
+ * - Index MAX_VOLUME_LIMIT (MAX_VOLUME_LIMIT%) ->  0 dB attenuation (Minimum attenuation / Max volume)
  */
-static const uint8_t volume_lut[101] = {
+static const uint8_t volume_lut[MAX_VOLUME_LIMIT + 1] = {
     79, 79, 79, 78, 78, 78, 77, 77, 77, 76, // 0%   - 9%
     76, 75, 75, 74, 74, 73, 73, 72, 72, 71, // 10%  - 19%
     71, 70, 70, 69, 68, 68, 67, 66, 66, 65, // 20%  - 29%
@@ -51,7 +53,7 @@ static const uint8_t volume_lut[101] = {
  * @param channel Channel number (1 - PT2258_TOTAL_CHANNELS)
  * @return true if channel is active, false otherwise
  */
-static inline bool _is_channel_active(pt2258_ctrl_handle_t handle, uint8_t channel)
+static inline bool _is_channel_active(const pt2258_ctrl_handle_t handle, uint8_t channel)
 {
     return (channel >= 1 && channel <= PT2258_TOTAL_CHANNELS) && 
            (handle->active_channels_mask & (1 << (channel - 1))) != 0;
@@ -63,7 +65,7 @@ static inline bool _is_channel_active(pt2258_ctrl_handle_t handle, uint8_t chann
  * @param channel Channel number (1 - PT2258_TOTAL_CHANNELS)
  * @return ESP_OK if channel is valid and active, error code otherwise
  */
-static inline esp_err_t _validate_active_channel(pt2258_ctrl_handle_t handle, uint8_t channel)
+static inline esp_err_t _validate_active_channel(const pt2258_ctrl_handle_t handle, uint8_t channel)
 {
     if (!_is_channel_active(handle, channel)) {
         return (channel < 1 || channel > PT2258_TOTAL_CHANNELS) ? ESP_ERR_INVALID_ARG : ESP_ERR_INVALID_STATE;
@@ -77,7 +79,7 @@ static inline esp_err_t _validate_active_channel(pt2258_ctrl_handle_t handle, ui
  * @param volume Volume percentage (0 - MAX_VOLUME_LIMIT)
  * @return Attenuation value (0 - PT2258_MAX_ATTENUATION dB)
  */
-static inline uint8_t _volume_to_attenuation(pt2258_ctrl_handle_t handle, uint8_t volume)
+static inline uint8_t _volume_to_attenuation(const pt2258_ctrl_handle_t handle, uint8_t volume)
 {
     if (volume > MAX_VOLUME_LIMIT) volume = MAX_VOLUME_LIMIT;
 
@@ -134,12 +136,12 @@ static esp_err_t _update(pt2258_ctrl_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t pt2258_ctrl_create(const pt2258_ctrl_config_t *cfg, pt2258_ctrl_handle_t *out_handle)
+esp_err_t pt2258_ctrl_create(const pt2258_ctrl_config_t *cfg, pt2258_ctrl_handle_t *handle)
 {
-    ESP_RETURN_ON_FALSE(cfg && cfg->pt2258 && out_handle, ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
+    ESP_RETURN_ON_FALSE(cfg && cfg->pt2258 && handle, ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
     ESP_RETURN_ON_FALSE(cfg->active_channels_mask !=0, ESP_ERR_INVALID_ARG, TAG, "No active channels");
     ESP_RETURN_ON_FALSE(cfg->init_volume <= MAX_VOLUME_LIMIT, ESP_ERR_INVALID_ARG, TAG, "Invalid init volume");
-    ESP_RETURN_ON_FALSE(cfg->offset_limits <= MAX_OFFSET_LIMIT, ESP_ERR_INVALID_ARG, TAG, "Invalid offset limits");
+    ESP_RETURN_ON_FALSE(cfg->offset_limits <= PT2258_MAX_ATTENUATION, ESP_ERR_INVALID_ARG, TAG, "Invalid offset limits");
 
     pt2258_ctrl_handle_t context = calloc(1, sizeof(struct pt2258_ctrl_ctx_t));
     ESP_RETURN_ON_FALSE(context, ESP_ERR_NO_MEM, TAG, "No memory");
@@ -155,7 +157,7 @@ esp_err_t pt2258_ctrl_create(const pt2258_ctrl_config_t *cfg, pt2258_ctrl_handle
 
     esp_err_t ret = pt2258_set_mute(context->chip, context->is_muted);
     if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to set initial mute");
+        ESP_LOGE(TAG, "Failed to set initial mute");
         free(context);
         return ret;
     }
@@ -168,7 +170,7 @@ esp_err_t pt2258_ctrl_create(const pt2258_ctrl_config_t *cfg, pt2258_ctrl_handle
     }
 
     ESP_LOGI(TAG, "Controller initialized successfully");
-    *out_handle = context;
+    *handle = context;
     return ESP_OK;
 }
 
@@ -196,7 +198,8 @@ esp_err_t pt2258_ctrl_set_offset(pt2258_ctrl_handle_t handle, uint8_t channel, i
     return _update(handle);
 }
 
-esp_err_t pt2258_ctrl_reset_offsets(pt2258_ctrl_handle_t handle) {
+esp_err_t pt2258_ctrl_reset_offsets(pt2258_ctrl_handle_t handle)
+{
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "Invalid handle");
     memset(handle->channel_offsets, 0, sizeof(handle->channel_offsets));
 
@@ -227,11 +230,13 @@ esp_err_t pt2258_ctrl_set_master_volume(pt2258_ctrl_handle_t handle, uint8_t vol
     return ret;
 }
 
-esp_err_t pt2258_ctrl_volume_step_up(pt2258_ctrl_handle_t handle, uint8_t step_percent) {
+esp_err_t pt2258_ctrl_volume_step_up(pt2258_ctrl_handle_t handle, uint8_t step_percent)
+{
     return _volume_step_internal(handle, (int16_t)step_percent);
 }
 
-esp_err_t pt2258_ctrl_volume_step_down(pt2258_ctrl_handle_t handle, uint8_t step_percent) {
+esp_err_t pt2258_ctrl_volume_step_down(pt2258_ctrl_handle_t handle, uint8_t step_percent)
+{
     return _volume_step_internal(handle, -(int16_t)step_percent);
 }
 
