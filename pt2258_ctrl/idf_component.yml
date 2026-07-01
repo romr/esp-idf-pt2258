@@ -1,0 +1,12 @@
+version: "0.2.3"
+description: "ESP-IDF volume manager for PT2258 6-channel electronic volume controller IC"
+url: "https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_ctrl"
+repository: "https://github.com/romr/esp-idf-pt2258.git"
+license: "Apache-2.0"
+tags: 
+  - pt2258
+  - audio
+  - adf
+dependencies:
+  idf: '>=4.4.0'
+  romr/pt2258: '~0.4.1'
