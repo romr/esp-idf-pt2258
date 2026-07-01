@@ -9,6 +9,9 @@ An ESP-IDF audio control implementation for the **PT2258 6-Channel Electronic Vo
 ### 📂 [pt2258 (I2C Driver)](https://github.com/romr/esp-idf-pt2258/tree/main/pt2258)
 Provides direct, stateless hardware control.
 
+### 📂 [pt2258_ctrl (Controller)](https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_ctrl)
+Provides a controller for the PT2258 driver.
+
 ### 📂 [pt2258_esp_adf (ESP-ADF Adapter)](https://github.com/romr/esp-idf-pt2258/tree/main/pt2258_esp_adf)
 ESP-ADF initialization adapter that bridges the PT2258 driver to the native ESP-ADF `i2c_bus` transport layer. Automatically handles installation of the core PT2258 I2C driver as a dependency.
 
@@ -23,6 +26,9 @@ Depending on your project's framework, run the appropriate command in your proje
 ```bash
 # If using the native ESP-IDF v5+ New I2C Master driver:
 idf.py add-dependency "romr/pt2258_esp_idf"
+
+# If using the PT2258 Controller:
+idf.py add-dependency "romr/pt2258_ctrl"
 
 # If using the ESP-ADF audio framework i2c_bus:
 idf.py add-dependency "romr/pt2258_esp_adf"
