@@ -56,6 +56,7 @@ void app_main(void)
     // 1. Initialize your I2C master bus and add PT2258 device (see pt2258 documentation for example)
     
     // ... your I2C bus and device initialization code ...
+    // You should have a pt2258_handle variable at this point (can be initialized by one of the adapters)
 
     // 2. Configure PT2258 controller
     // Enable channels 1, 2, and 3 (stereo setup)
